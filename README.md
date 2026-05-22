@@ -30,3 +30,5 @@ npm start
 
 The repository includes a CI workflow that runs `npm ci` and `npm run build` on every push and pull request.
 仓库已包含 CI 工作流，会在每次 push 和 pull request 时运行 `npm ci` 和 `npm run build`。
+
+MindustryX fork / 源码 fork: https://github.com/BEK-Group/MindustryX

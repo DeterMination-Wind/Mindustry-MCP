@@ -6,6 +6,7 @@ import { z } from "zod";
 import { MindustryBridgeClient } from "./protocol.js";
 
 const client = new MindustryBridgeClient();
+const mindustryxRepoUrl = "https://github.com/BEK-Group/MindustryX";
 
 const server = new McpServer({
   name: "mindustry-mcp-server",
@@ -262,12 +263,16 @@ server.registerResource(
   },
   async (): Promise<ReadResourceResult> => {
     const info = await client.getBridgeStatus();
+    const payload = {
+      ...info,
+      mindustryxRepoUrl
+    };
     return {
       contents: [
         {
           uri: "mindustry://bridge/info",
           mimeType: "application/json",
-          text: JSON.stringify(info, null, 2)
+          text: JSON.stringify(payload, null, 2)
         }
       ]
     };

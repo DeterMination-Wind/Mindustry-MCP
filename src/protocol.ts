@@ -59,21 +59,35 @@ export class MindustryBridgeClient {
     return JSON.parse(raw) as BridgeInfo;
   }
 
-  async connect(): Promise<void> {
+  async connect(timeoutMs = 5000): Promise<void> {
     if (this.socket && !this.socket.destroyed) return;
 
     const info = await this.loadBridgeInfo();
 
     await new Promise<void>((resolve, reject) => {
+      let settled = false;
       const socket = net.createConnection({ host: info.host, port: info.port }, () => {
+        if (settled) return;
+        settled = true;
+        socket.setTimeout(0);
         this.socket = socket;
         resolve();
       });
 
+      socket.setTimeout(timeoutMs, () => {
+        if (settled) return;
+        settled = true;
+        const error = new Error(`Bridge connection timed out: ${info.host}:${info.port}`);
+        socket.destroy(error);
+        reject(error);
+      });
       socket.on("data", (chunk) => this.handleData(chunk));
       socket.on("error", (error) => {
         this.rejectAll(error);
-        reject(error);
+        if (!settled) {
+          settled = true;
+          reject(error);
+        }
       });
       socket.on("close", () => {
         this.rejectAll(new Error("Bridge socket closed"));
@@ -95,7 +109,7 @@ export class MindustryBridgeClient {
   }
 
   async request(op: string, payload: Record<string, unknown> = {}, timeoutMs = 5000): Promise<BridgeResponse> {
-    await this.connect();
+    await this.connect(timeoutMs);
 
     const requestId = this.requestId++;
     const frame = encodeMessage({
